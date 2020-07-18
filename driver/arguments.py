@@ -86,7 +86,8 @@ Examples:
 %s
 """ % "\n\n".join("%s\n%s" % (desc, " ".join(cmd)) for desc, cmd in EXAMPLES)
 
-COMPONENTS_PLUS_OVERALL = ["translate", "search", "validate", "overall"]
+COMPONENTS_PLUS_OVERALL = ["translate",
+                           "petri-translate", "search", "validate", "overall"]
 DEFAULT_SAS_FILE = "output.sas"
 
 
@@ -94,13 +95,17 @@ DEFAULT_SAS_FILE = "output.sas"
 Function to emulate the behavior of ArgumentParser.error, but with our
 custom exit codes instead of 2.
 """
+
+
 def print_usage_and_exit_with_driver_input_error(parser, msg):
     parser.print_usage()
-    returncodes.exit_with_driver_input_error("{}: error: {}".format(os.path.basename(sys.argv[0]), msg))
+    returncodes.exit_with_driver_input_error(
+        "{}: error: {}".format(os.path.basename(sys.argv[0]), msg))
 
 
 class RawHelpFormatter(argparse.HelpFormatter):
     """Preserve newlines and spacing."""
+
     def _fill_text(self, text, width, indent):
         return ''.join([indent + line for line in text.splitlines(True)])
 
@@ -158,12 +163,15 @@ def _split_planner_args(parser, args):
     args.filenames, options = _split_off_filenames(args.planner_args)
 
     args.translate_options = []
+    args.petri_translate_options = []
     args.search_options = []
 
     curr_options = args.search_options
     for option in options:
         if option == "--translate-options":
             curr_options = args.translate_options
+        elif option == "--petri-translate-options":
+            curr_options = args.petri_translate_options
         elif option == "--search-options":
             curr_options = args.search_options
         else:
@@ -217,8 +225,15 @@ def _set_components_and_inputs(parser, args):
     args.components = []
     if args.translate or args.run_all:
         args.components.append("translate")
+    if args.petri_translate or args.run_all:
+        args.components.append("petri-translate")
     if args.search or args.run_all:
         args.components.append("search")
+
+    if "translate" in args.components and "petri-translate" in args.components:
+        print_usage_and_exit_with_driver_input_error(
+            parser,
+            "choose between 'translate' and 'petri-translate', both cannot be executed")
 
     if not args.components:
         _set_components_automatically(parser, args)
@@ -250,6 +265,18 @@ def _set_components_and_inputs(parser, args):
         else:
             print_usage_and_exit_with_driver_input_error(
                 parser, "translator needs one or two input files")
+    elif first == "petri-translate":
+        if "--help" in args.petri_translate_options or "-h" in args.petri_translate_options:
+            args.petri_translate_inputs = []
+        elif num_files == 1:
+            task_file, = args.filenames
+            domain_file = util.find_domain_filename(task_file)
+            args.petri_translate_inputs = [domain_file, task_file]
+        elif num_files == 2:
+            args.petri_translate_inputs = args.filenames
+        else:
+            print_usage_and_exit_with_driver_input_error(
+                parser, "Petri translator needs one or two input files")
     elif first == "search":
         if "--help" in args.search_options:
             args.search_input = None
@@ -272,10 +299,21 @@ def _set_translator_output_options(parser, args):
     args.translate_options += ["--sas-file", args.search_input]
 
 
+def _set_petri_translator_output_options(parser, args):
+    if any("--petri-file" in opt for opt in args.petri_translate_options):
+        print_usage_and_exit_with_driver_input_error(
+            parser, "Cannot pass the \"--petri-file\" option to translate.py from the "
+                    "fast-downward.py script. Pass it directly to fast-downward.py instead.")
+
+    args.search_input = args.sas_file
+    args.petri_translate_options += ["--sas-file", args.search_input]
+
+
 def _get_time_limit_in_seconds(limit, parser):
     match = re.match(r"^(\d+)(s|m|h)?$", limit, flags=re.I)
     if not match:
-        print_usage_and_exit_with_driver_input_error(parser, "malformed time limit parameter: {}".format(limit))
+        print_usage_and_exit_with_driver_input_error(
+            parser, "malformed time limit parameter: {}".format(limit))
     time = int(match.group(1))
     suffix = match.group(2)
     if suffix is not None:
@@ -290,7 +328,8 @@ def _get_time_limit_in_seconds(limit, parser):
 def _get_memory_limit_in_bytes(limit, parser):
     match = re.match(r"^(\d+)(k|m|g)?$", limit, flags=re.I)
     if not match:
-        print_usage_and_exit_with_driver_input_error(parser, "malformed memory limit parameter: {}".format(limit))
+        print_usage_and_exit_with_driver_input_error(
+            parser, "malformed memory limit parameter: {}".format(limit))
     memory = int(match.group(1))
     suffix = match.group(2)
     if suffix is not None:
@@ -305,14 +344,14 @@ def _get_memory_limit_in_bytes(limit, parser):
 
 
 def set_time_limit_in_seconds(parser, args, component):
-    param = component + "_time_limit"
+    param = component.replace('-', '_') + "_time_limit"
     limit = getattr(args, param)
     if limit is not None:
         setattr(args, param, _get_time_limit_in_seconds(limit, parser))
 
 
 def set_memory_limit_in_bytes(parser, args, component):
-    param = component + "_memory_limit"
+    param = component.replace('-', '_') + "_memory_limit"
     limit = getattr(args, param)
     if limit is not None:
         setattr(args, param, _get_memory_limit_in_bytes(limit, parser))
@@ -356,6 +395,9 @@ def parse_args():
         "--translate", action="store_true",
         help="run translator component")
     components.add_argument(
+        "--petri-translate", action="store_true",
+        help="run Petri translate component")
+    components.add_argument(
         "--search", action="store_true",
         help="run search component")
 
@@ -373,12 +415,12 @@ def parse_args():
     driver_other.add_argument(
         "--build",
         help="BUILD can be a predefined build name like release "
-            "(default) and debug, a custom build name, or the path to "
-            "a directory holding the planner binaries. The driver "
-            "first looks for the planner binaries under 'BUILD'. If "
-            "this path does not exist, it tries the directory "
-            "'<repo>/builds/BUILD/bin', where the build script creates "
-            "them by default.")
+        "(default) and debug, a custom build name, or the path to "
+        "a directory holding the planner binaries. The driver "
+        "first looks for the planner binaries under 'BUILD'. If "
+        "this path does not exist, it tries the directory "
+        "'<repo>/builds/BUILD/bin', where the build script creates "
+        "them by default.")
     driver_other.add_argument(
         "--debug", action="store_true",
         help="alias for --build=debug --validate")
@@ -397,11 +439,11 @@ def parse_args():
     driver_other.add_argument(
         "--sas-file", metavar="FILE",
         help="intermediate file for storing the translator output "
-            "(implies --keep-sas-file, default: {})".format(DEFAULT_SAS_FILE))
+        "(implies --keep-sas-file, default: {})".format(DEFAULT_SAS_FILE))
     driver_other.add_argument(
         "--keep-sas-file", action="store_true",
         help="keep translator output file (implied by --sas-file, default: "
-            "delete file if translator and search component are active)")
+        "delete file if translator and search component are active)")
 
     driver_other.add_argument(
         "--portfolio", metavar="FILE",
@@ -438,7 +480,7 @@ def parse_args():
     if args.build and args.debug:
         print_usage_and_exit_with_driver_input_error(
             parser, "The option --debug is an alias for --build=debug "
-                     "--validate. Do no specify both --debug and --build.")
+            "--validate. Do no specify both --debug and --build.")
     if not args.build:
         if args.debug:
             args.build = "debug"
@@ -448,11 +490,12 @@ def parse_args():
     _split_planner_args(parser, args)
 
     _check_mutex_args(parser, [
-            ("--alias", args.alias is not None),
-            ("--portfolio", args.portfolio is not None),
-            ("options for search component", bool(args.search_options))])
+        ("--alias", args.alias is not None),
+        ("--portfolio", args.portfolio is not None),
+        ("options for search component", bool(args.search_options))])
 
     _set_translator_output_options(parser, args)
+    _set_petri_translator_output_options(parser, args)
 
     _convert_limits_to_ints(parser, args)
 

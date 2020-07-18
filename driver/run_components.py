@@ -13,6 +13,7 @@ from .plan_manager import PlanManager
 
 # TODO: We might want to turn translate into a module and call it with "python3 -m translate".
 REL_TRANSLATE_PATH = os.path.join("translate", "translate.py")
+REL_PETRI_TRANSLATE_PATH = os.path.join("translate", "petri_translate.py")
 if os.name == "posix":
     REL_SEARCH_PATH = "downward"
     VALIDATE = "validate"
@@ -20,7 +21,9 @@ elif os.name == "nt":
     REL_SEARCH_PATH = "downward.exe"
     VALIDATE = "validate.exe"
 else:
-    returncodes.exit_with_driver_unsupported_error("Unsupported OS: " + os.name)
+    returncodes.exit_with_driver_unsupported_error(
+        "Unsupported OS: " + os.name)
+
 
 def get_executable(build, rel_path):
     # First, consider 'build' to be a path directly to the binaries.
@@ -55,7 +58,8 @@ def run_translate(args):
         args.translate_memory_limit, args.overall_memory_limit)
     translate = get_executable(args.build, REL_TRANSLATE_PATH)
     assert sys.executable, "Path to interpreter could not be found"
-    cmd = [sys.executable] + [translate] + args.translate_inputs + args.translate_options
+    cmd = [sys.executable] + [translate] + \
+        args.translate_inputs + args.translate_options
 
     stderr, returncode = call.get_error_output_and_returncode(
         "translator",
@@ -93,6 +97,53 @@ def run_translate(args):
         return (returncode, False)
 
 
+def run_petri_translate(args):
+    logging.info("Running Petri translator.")
+    time_limit = limits.get_time_limit(
+        args.petri_translate_time_limit, args.overall_time_limit)
+    memory_limit = limits.get_memory_limit(
+        args.petri_translate_memory_limit, args.overall_memory_limit)
+    translate = get_executable(args.build, REL_PETRI_TRANSLATE_PATH)
+    assert sys.executable, "Path to interpreter could not be found"
+    cmd = [sys.executable] + [translate] + \
+        args.petri_translate_inputs + args.petri_translate_options
+
+    stderr, returncode = call.get_error_output_and_returncode(
+        "petri_translator",
+        cmd,
+        time_limit=time_limit,
+        memory_limit=memory_limit)
+
+    # We collect stderr of the translator and print it here, unless
+    # the translator ran out of memory and all output in stderr is
+    # related to MemoryError.
+    do_print_on_stderr = True
+    if returncode == returncodes.PETRI_TRANSLATE_OUT_OF_MEMORY:
+        output_related_to_memory_error = True
+        if not stderr:
+            output_related_to_memory_error = False
+        for line in stderr.splitlines():
+            if "MemoryError" not in line:
+                output_related_to_memory_error = False
+                break
+        if output_related_to_memory_error:
+            do_print_on_stderr = False
+
+    if do_print_on_stderr and stderr:
+        returncodes.print_stderr(stderr)
+
+    if returncode == 0:
+        return (0, True)
+    elif returncode == 1:
+        # Unlikely case that the translator crashed without raising an
+        # exception.
+        return (returncodes.PETRI_TRANSLATE_CRITICAL_ERROR, False)
+    else:
+        # Pass on any other exit code, including in particular signals or
+        # exit codes such as running out of memory or time.
+        return (returncode, False)
+
+
 def run_search(args):
     logging.info("Running search (%s)." % args.build)
     time_limit = limits.get_time_limit(
@@ -118,7 +169,8 @@ def run_search(args):
             returncodes.exit_with_driver_input_error(
                 "search needs --alias, --portfolio, or search options")
         if "--help" not in args.search_options:
-            args.search_options.extend(["--internal-plan-file", args.plan_file])
+            args.search_options.extend(
+                ["--internal-plan-file", args.plan_file])
         try:
             call.check_call(
                 "search",
@@ -132,7 +184,8 @@ def run_search(args):
             # would need to return (err.returncode, True) if the returncode is
             # in [0..10].
             # Negative exit codes are allowed for passing out signals.
-            assert err.returncode >= 10 or err.returncode < 0, "got returncode < 10: {}".format(err.returncode)
+            assert err.returncode >= 10 or err.returncode < 0, "got returncode < 10: {}".format(
+                err.returncode)
             return (err.returncode, False)
         else:
             return (0, True)
@@ -148,7 +201,8 @@ def run_validate(args):
     elif num_files == 2:
         domain, task = args.filenames
     else:
-        returncodes.exit_with_driver_input_error("validate needs one or two PDDL input files.")
+        returncodes.exit_with_driver_input_error(
+            "validate needs one or two PDDL input files.")
 
     plan_files = list(PlanManager(args.plan_file).get_existing_plans())
     if not plan_files:
@@ -164,7 +218,8 @@ def run_validate(args):
             memory_limit=args.validate_memory_limit)
     except OSError as err:
         if err.errno == errno.ENOENT:
-            returncodes.exit_with_driver_input_error("Error: {} not found. Is it on the PATH?".format(VALIDATE))
+            returncodes.exit_with_driver_input_error(
+                "Error: {} not found. Is it on the PATH?".format(VALIDATE))
         else:
             returncodes.exit_with_driver_critical_error(err)
     else:
