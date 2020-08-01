@@ -170,32 +170,40 @@ class PetriNet():
         for i, tran in enumerate(self.transitions):
             entered_vars = set()
             pre_post = []
-            debug = False
+            prevail = []
             for orig in tran.origins:
                 var = place2var[orig.name]
                 pre_val = 1
                 post_val = 0
+                in_effects = False
                 for dest in tran.destinations:
                     if dest.name == orig.name:
-                        post_val = 1
+                        in_effects = True
                         break
                 # cond is always empty
-                pre_post.append((var, pre_val, post_val, []))
+                if in_effects:
+                    prevail.append((var, 1))
+                else:
+                    pre_post.append((var, pre_val, post_val, []))
                 entered_vars.add(var)
             for dest in tran.destinations:
                 var = place2var[dest.name]
                 if var not in entered_vars:
                     post_val = 1
                     pre_val = 0
+                    in_pre = False
                     for orig in tran.origins:
                         if orig.name == dest.name:
-                            pre_val = 1
+                            in_pre = True
                             break
                     # cond is always empty
-                    pre_post.append((var, pre_val, post_val, []))
+                    if in_pre:
+                        prevail.append((var, 1))
+                    else:
+                        pre_post.append((var, pre_val, post_val, []))
             # prevail is always empty list, all preconditions to preconds
             operators.append(sas_tasks.SASOperator(
-                f"({tran.name})", [], pre_post, tran.cost))
+                f"({tran.name})", prevail, pre_post, tran.cost))
         axioms = []
         metric = True
         sas_task = sas_tasks.SASTask(variables, mutexes, init, goal,
