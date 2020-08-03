@@ -170,7 +170,7 @@ class PetriNet():
         for i, tran in enumerate(self.transitions):
             entered_vars = set()
             pre_post = []
-            prevail = []
+            prevail = set()
             for orig in tran.origins:
                 var = place2var[orig.name]
                 pre_val = 1
@@ -182,7 +182,7 @@ class PetriNet():
                         break
                 # cond is always empty
                 if in_effects:
-                    prevail.append((var, 1))
+                    prevail.add(var)
                 else:
                     pre_post.append((var, pre_val, post_val, []))
                 entered_vars.add(var)
@@ -198,10 +198,12 @@ class PetriNet():
                             break
                     # cond is always empty
                     if in_pre:
-                        prevail.append((var, 1))
+                        prevail.add(var)
                     else:
                         pre_post.append((var, pre_val, post_val, []))
-            # prevail is always empty list, all preconditions to preconds
+                    entered_vars.add(var)
+
+            prevail = [(var, 1) for var in prevail]
             operators.append(sas_tasks.SASOperator(
                 f"({tran.name})", prevail, pre_post, tran.cost))
         axioms = []
