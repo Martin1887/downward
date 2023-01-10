@@ -17,14 +17,14 @@ namespace cegar {
   abstraction.
 */
 class DihgarTask {
-const vector<shared_ptr<DihgarStep>> steps;
+    const vector<shared_ptr<DihgarStep>> steps;
 
 public:
     DihgarTask(const vector<shared_ptr<DihgarStep>> &steps);
     ~DihgarTask() = default;
-    
+
     const vector<shared_ptr<DihgarStep>> get_steps() const;
-    
+
     void run(shared_ptr<DIHGAR> dihgar) const;
 };
 }

@@ -212,7 +212,7 @@ void CostSaturation::build_abstractions(
                 log << "Number of states: " << num_states << ", max: "
                     << max_states << endl;
             }
-            
+
             shared_ptr<DIHGAR> dihgar = make_shared<DIHGAR>(
                 subtask,
                 max(1, (max_states - num_states) / rem_tasks),
@@ -222,13 +222,13 @@ void CostSaturation::build_abstractions(
                 rng,
                 log);
             dihgar_task->run(dihgar);
-        
+
             shared_ptr<Abstraction> abstraction = dihgar->abstraction;
             ++num_abstractions;
             num_states += abstraction->get_num_states();
             num_non_looping_transitions += abstraction->get_transition_system().get_num_non_loops();
             assert(num_states <= max_states);
-    
+
             vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
             vector<int> init_distances = compute_distances(
                 abstraction->get_transition_system().get_outgoing_transitions(),
@@ -243,16 +243,16 @@ void CostSaturation::build_abstractions(
                 init_distances,
                 goal_distances,
                 use_general_costs);
-    
+
             heuristic_functions.emplace_back(
                 abstraction->extract_refinement_hierarchy(),
                 move(goal_distances));
-    
+
             reduce_remaining_costs(saturated_costs);
-    
+
             if (should_abort())
                 break;
-    
+
             --rem_dihgar_tasks;
         }
         --rem_subtasks;

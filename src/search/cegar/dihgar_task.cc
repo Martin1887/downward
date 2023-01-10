@@ -9,7 +9,6 @@
 using namespace std;
 
 namespace cegar {
-
 DihgarTask::DihgarTask(
     const vector<shared_ptr<DihgarStep>> &steps)
     : steps(steps) {

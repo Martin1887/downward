@@ -10,14 +10,14 @@
 namespace cegar {
 /*
   A shared_ptr<DIHGAR> step is a domain independent heuristic guided refinement upon the
-  trivial abstraction or a previously refined abstraction. 
+  trivial abstraction or a previously refined abstraction.
 */
 class DihgarStep {
 public:
     virtual void run(shared_ptr<DIHGAR> dihgar) const {
         utils::unused_variable(dihgar);
     }
-    
+
     virtual ~DihgarStep() = default;
 };
 
@@ -27,7 +27,7 @@ public:
 class CegarDihgarStep : public DihgarStep {
 public:
     CegarDihgarStep() = default;
-    CegarDihgarStep(CegarDihgarStep const&) = default;
+    CegarDihgarStep(CegarDihgarStep const &) = default;
     void run(shared_ptr<DIHGAR> dihgar) const override;
 };
 
@@ -54,18 +54,18 @@ class RefinedByFactsDihgarStep : public DihgarStep {
 public:
     virtual ~RefinedByFactsDihgarStep() = default;
     RefinedByFactsDihgarStep() = default;
-    RefinedByFactsDihgarStep(RefinedByFactsDihgarStep const&) = default;
+    RefinedByFactsDihgarStep(RefinedByFactsDihgarStep const &) = default;
 
     void refine_by_facts(
         shared_ptr<DIHGAR> dihgar,
         const vector<FactPair> &refined_facts) const;
-    
+
     // The overhead of shrinking in the nodes and refinement hierarchy
     // does not pay off.
     // void shrink(shared_ptr<DIHGAR> dihgar) const;
     // void shrink_loop(shared_ptr<DIHGAR> dihgar) const;
     void run(shared_ptr<DIHGAR> dihgar) const override;
-    
+
     virtual const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const = 0;
 };
 
@@ -75,7 +75,7 @@ public:
 class FactLandmarksDihgarStep : public RefinedByFactsDihgarStep {
 public:
     FactLandmarksDihgarStep() = default;
-    FactLandmarksDihgarStep(FactLandmarksDihgarStep const&) = default;
+    FactLandmarksDihgarStep(FactLandmarksDihgarStep const &) = default;
     const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const override;
 };
 }

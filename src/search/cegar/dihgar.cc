@@ -49,5 +49,4 @@ DIHGAR::DIHGAR(
             << max_non_looping_transitions << endl;
     }
 }
-
 }

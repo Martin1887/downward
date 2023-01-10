@@ -87,14 +87,14 @@ CEGAR::CEGAR(
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log)
     : CEGAR::CEGAR(task,
-        make_shared<Abstraction>(task, log),
-        make_shared<AbstractSearch>(task_properties::get_operator_costs(task_proxy)),
-        max_states,
-        max_non_looping_transitions,
-        max_time,
-        pick,
-        rng,
-        log) {
+                   make_shared<Abstraction>(task, log),
+                   make_shared<AbstractSearch>(task_properties::get_operator_costs(task_proxy)),
+                   max_states,
+                   max_non_looping_transitions,
+                   max_time,
+                   pick,
+                   rng,
+                   log) {
 }
 
 CEGAR::CEGAR(

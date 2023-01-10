@@ -41,7 +41,7 @@ int CartesianSet::count(int var) const {
 
 vector<int> CartesianSet::values_for_var(int var) const {
     vector<int> values = vector<int>();
-    for (int i = 0; i < domain_subsets[var].count(); i ++) {
+    for (int i = 0; i < domain_subsets[var].count(); i++) {
         if (domain_subsets[var].test(i)) {
             values.push_back(i);
         }

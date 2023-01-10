@@ -17,8 +17,7 @@ using namespace std;
 using namespace landmarks;
 
 namespace cegar {
-
-void CegarDihgarStep::run(shared_ptr<DIHGAR> dihgar) const { 
+void CegarDihgarStep::run(shared_ptr<DIHGAR> dihgar) const {
     dihgar->log << "Running CEGAR step" << endl;
     CEGAR cegar(
         dihgar->task,
@@ -66,11 +65,11 @@ void RefinedByFactsDihgarStep::refine_by_facts(
     vector<FactPair> not_refined_yet = vector<FactPair>(refined_facts);
     while (!not_refined_yet.empty()) {
         FactPair to_refine = not_refined_yet.back();
-        
+
         // Traverse all the abstract states and refine the states that contain
         // the fact to refine.
         AbstractStates all_states = dihgar->abstraction->get_all_states();
-        for (auto& st : all_states) {
+        for (auto &st : all_states) {
             if (st->contains(to_refine.var, to_refine.value)) {
                 auto new_state_ids = dihgar->abstraction->refine(
                     *st, to_refine.var, vector<int>(to_refine.value));

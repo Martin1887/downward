@@ -13,8 +13,7 @@
 using namespace std;
 
 namespace cegar {
-
-OriginalCegarStrategy::OriginalCegarStrategy(const Options &opts){
+OriginalCegarStrategy::OriginalCegarStrategy(const Options &opts) {
     utils::unused_variable(opts);
 }
 
@@ -32,7 +31,7 @@ DihgarSharedTasks OriginalCegarStrategy::get_dihgar_tasks(
     return dihgar_tasks;
 }
 
-FactLandmarksStrategy::FactLandmarksStrategy(const Options &opts){
+FactLandmarksStrategy::FactLandmarksStrategy(const Options &opts) {
     utils::unused_variable(opts);
 }
 
