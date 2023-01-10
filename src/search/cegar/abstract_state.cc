@@ -23,6 +23,10 @@ int AbstractState::count(int var) const {
     return cartesian_set.count(var);
 }
 
+vector<int> AbstractState::values_for_var(int var) const {
+    return cartesian_set.values_for_var(var);
+}
+
 bool AbstractState::contains(int var, int value) const {
     return cartesian_set.test(var, value);
 }
@@ -52,6 +56,10 @@ pair<CartesianSet, CartesianSet> AbstractState::split_domain(
     assert(v1_cartesian_set.count(var) == cartesian_set.count(var) - num_wanted);
     assert(v2_cartesian_set.count(var) == num_wanted);
     return make_pair(v1_cartesian_set, v2_cartesian_set);
+}
+
+void AbstractState::set_value(int var, int value) {
+    cartesian_set.set_single_value(var, value);
 }
 
 CartesianSet AbstractState::regress(const OperatorProxy &op) const {

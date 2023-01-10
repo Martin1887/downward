@@ -31,6 +31,7 @@ public:
     }
 
     int count(int var) const;
+    std::vector<int> values_for_var(int var) const;
     bool intersects(const CartesianSet &other, int var) const;
     bool is_superset_of(const CartesianSet &other) const;
 

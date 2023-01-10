@@ -4,6 +4,9 @@
 #include "abstraction.h"
 #include "cartesian_heuristic_function.h"
 #include "cegar.h"
+#include "dihgar.h"
+#include "dihgar_strategy.h"
+#include "dihgar_task.h"
 #include "refinement_hierarchy.h"
 #include "subtask_generators.h"
 #include "transition_system.h"
@@ -83,6 +86,7 @@ static vector<int> compute_saturated_costs(
 
 CostSaturation::CostSaturation(
     const vector<shared_ptr<SubtaskGenerator>> &subtask_generators,
+    const vector<shared_ptr<DihgarTask>> &dihgar_tasks,
     int max_states,
     int max_non_looping_transitions,
     double max_time,
@@ -91,6 +95,7 @@ CostSaturation::CostSaturation(
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log)
     : subtask_generators(subtask_generators),
+      dihgar_tasks(dihgar_tasks),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       max_time(max_time),
@@ -131,7 +136,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
     utils::reserve_extra_memory_padding(memory_padding_in_mb);
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
-        build_abstractions(subtasks, timer, should_abort);
+        build_abstractions(subtasks, dihgar_tasks, timer, should_abort);
         if (should_abort())
             break;
     }
@@ -189,53 +194,67 @@ bool CostSaturation::state_is_dead_end(const State &state) const {
 
 void CostSaturation::build_abstractions(
     const vector<shared_ptr<AbstractTask>> &subtasks,
+    const vector<shared_ptr<DihgarTask>> &dihgar_tasks,
     const utils::CountdownTimer &timer,
     function<bool()> should_abort) {
     int rem_subtasks = subtasks.size();
+    int num_dihgar_tasks = dihgar_tasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
-        subtask = get_remaining_costs_task(subtask);
+        int rem_dihgar_tasks = num_dihgar_tasks;
 
         assert(num_states < max_states);
-        CEGAR cegar(
-            subtask,
-            max(1, (max_states - num_states) / rem_subtasks),
-            max(1, (max_non_looping_transitions - num_non_looping_transitions) /
-                rem_subtasks),
-            timer.get_remaining_time() / rem_subtasks,
-            pick_split,
-            rng,
-            log);
-
-        unique_ptr<Abstraction> abstraction = cegar.extract_abstraction();
-        ++num_abstractions;
-        num_states += abstraction->get_num_states();
-        num_non_looping_transitions += abstraction->get_transition_system().get_num_non_loops();
-        assert(num_states <= max_states);
-
-        vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
-        vector<int> init_distances = compute_distances(
-            abstraction->get_transition_system().get_outgoing_transitions(),
-            costs,
-            {abstraction->get_initial_state().get_id()});
-        vector<int> goal_distances = compute_distances(
-            abstraction->get_transition_system().get_incoming_transitions(),
-            costs,
-            abstraction->get_goals());
-        vector<int> saturated_costs = compute_saturated_costs(
-            abstraction->get_transition_system(),
-            init_distances,
-            goal_distances,
-            use_general_costs);
-
-        heuristic_functions.emplace_back(
-            abstraction->extract_refinement_hierarchy(),
-            move(goal_distances));
-
-        reduce_remaining_costs(saturated_costs);
-
-        if (should_abort())
-            break;
-
+        for (shared_ptr<DihgarTask> dihgar_task : dihgar_tasks) {
+            subtask = get_remaining_costs_task(subtask);
+            int rem_tasks = ((rem_subtasks - 1) * num_dihgar_tasks) +
+                rem_dihgar_tasks;
+            if (log.is_at_least_normal()) {
+                log << "Remaining tasks: " << rem_tasks << endl;
+                log << "Number of states: " << num_states << ", max: "
+                    << max_states << endl;
+            }
+            
+            shared_ptr<DIHGAR> dihgar = make_shared<DIHGAR>(
+                subtask,
+                max(1, (max_states - num_states) / rem_tasks),
+                max(1, (max_non_looping_transitions - num_non_looping_transitions) / rem_tasks),
+                timer.get_remaining_time() / rem_tasks,
+                pick_split,
+                rng,
+                log);
+            dihgar_task->run(dihgar);
+        
+            shared_ptr<Abstraction> abstraction = dihgar->abstraction;
+            ++num_abstractions;
+            num_states += abstraction->get_num_states();
+            num_non_looping_transitions += abstraction->get_transition_system().get_num_non_loops();
+            assert(num_states <= max_states);
+    
+            vector<int> costs = task_properties::get_operator_costs(TaskProxy(*subtask));
+            vector<int> init_distances = compute_distances(
+                abstraction->get_transition_system().get_outgoing_transitions(),
+                costs,
+                {abstraction->get_initial_state().get_id()});
+            vector<int> goal_distances = compute_distances(
+                abstraction->get_transition_system().get_incoming_transitions(),
+                costs,
+                abstraction->get_goals());
+            vector<int> saturated_costs = compute_saturated_costs(
+                abstraction->get_transition_system(),
+                init_distances,
+                goal_distances,
+                use_general_costs);
+    
+            heuristic_functions.emplace_back(
+                abstraction->extract_refinement_hierarchy(),
+                move(goal_distances));
+    
+            reduce_remaining_costs(saturated_costs);
+    
+            if (should_abort())
+                break;
+    
+            --rem_dihgar_tasks;
+        }
         --rem_subtasks;
     }
 }

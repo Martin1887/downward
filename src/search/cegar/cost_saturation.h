@@ -1,6 +1,8 @@
 #ifndef CEGAR_COST_SATURATION_H
 #define CEGAR_COST_SATURATION_H
 
+#include "dihgar_strategy.h"
+#include "dihgar_task.h"
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
 
@@ -27,6 +29,7 @@ class SubtaskGenerator;
 */
 class CostSaturation {
     const std::vector<std::shared_ptr<SubtaskGenerator>> subtask_generators;
+    const std::vector<std::shared_ptr<DihgarTask>> dihgar_tasks;
     const int max_states;
     const int max_non_looping_transitions;
     const double max_time;
@@ -48,6 +51,7 @@ class CostSaturation {
     bool state_is_dead_end(const State &state) const;
     void build_abstractions(
         const std::vector<std::shared_ptr<AbstractTask>> &subtasks,
+        const vector<shared_ptr<DihgarTask>> &dihgar_tasks,
         const utils::CountdownTimer &timer,
         std::function<bool()> should_abort);
     void print_statistics(utils::Duration init_time) const;
@@ -55,6 +59,7 @@ class CostSaturation {
 public:
     CostSaturation(
         const std::vector<std::shared_ptr<SubtaskGenerator>> &subtask_generators,
+        const std::vector<std::shared_ptr<DihgarTask>> &dihgar_tasks,
         int max_states,
         int max_non_looping_transitions,
         double max_time,

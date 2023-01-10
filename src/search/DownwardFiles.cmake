@@ -643,6 +643,10 @@ fast_downward_plugin(
         cegar/cartesian_set
         cegar/cegar
         cegar/cost_saturation
+        cegar/dihgar
+        cegar/dihgar_step
+        cegar/dihgar_strategy
+        cegar/dihgar_task
         cegar/refinement_hierarchy
         cegar/split_selector
         cegar/subtask_generators

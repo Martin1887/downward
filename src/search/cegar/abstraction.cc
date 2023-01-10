@@ -31,6 +31,10 @@ Abstraction::Abstraction(const shared_ptr<AbstractTask> &task, utils::LogProxy &
 Abstraction::~Abstraction() {
 }
 
+AbstractStates Abstraction::get_all_states() const {
+    return states;
+}
+
 const AbstractState &Abstraction::get_initial_state() const {
     return *states[init_id];
 }

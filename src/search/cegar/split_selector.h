@@ -62,6 +62,7 @@ class SplitSelector {
 
 public:
     SplitSelector(const std::shared_ptr<AbstractTask> &task, PickSplit pick);
+    SplitSelector(SplitSelector &) = default;
     ~SplitSelector();
 
     const Split &pick_split(

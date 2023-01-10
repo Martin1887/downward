@@ -34,8 +34,8 @@ class CEGAR {
     const int max_non_looping_transitions;
     const SplitSelector split_selector;
 
-    std::unique_ptr<Abstraction> abstraction;
-    AbstractSearch abstract_search;
+    std::shared_ptr<Abstraction> abstraction;
+    std::shared_ptr<AbstractSearch> abstract_search;
 
     // Limit the time for building the abstraction.
     utils::CountdownTimer timer;
@@ -64,8 +64,21 @@ class CEGAR {
     void print_statistics();
 
 public:
+    // Constructor to start from the trivial abstraction.
     CEGAR(
         const std::shared_ptr<AbstractTask> &task,
+        int max_states,
+        int max_non_looping_transitions,
+        double max_time,
+        PickSplit pick,
+        utils::RandomNumberGenerator &rng,
+        utils::LogProxy &log);
+    // Constructor to continue the refinement of
+    // an existent abstraction.
+    CEGAR(
+        const std::shared_ptr<AbstractTask> &task,
+        const std::shared_ptr<Abstraction> &abstraction,
+        const std::shared_ptr<AbstractSearch> &abstract_search,
         int max_states,
         int max_non_looping_transitions,
         double max_time,
@@ -75,8 +88,6 @@ public:
     ~CEGAR();
 
     CEGAR(const CEGAR &) = delete;
-
-    std::unique_ptr<Abstraction> extract_abstraction();
 };
 }
 

@@ -86,13 +86,34 @@ CEGAR::CEGAR(
     PickSplit pick,
     utils::RandomNumberGenerator &rng,
     utils::LogProxy &log)
+    : CEGAR::CEGAR(task,
+        make_shared<Abstraction>(task, log),
+        make_shared<AbstractSearch>(task_properties::get_operator_costs(task_proxy)),
+        max_states,
+        max_non_looping_transitions,
+        max_time,
+        pick,
+        rng,
+        log) {
+}
+
+CEGAR::CEGAR(
+    const shared_ptr<AbstractTask> &task,
+    const shared_ptr<Abstraction> &abstraction,
+    const shared_ptr<AbstractSearch> &abstract_search,
+    int max_states,
+    int max_non_looping_transitions,
+    double max_time,
+    PickSplit pick,
+    utils::RandomNumberGenerator &rng,
+    utils::LogProxy &log)
     : task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
       max_states(max_states),
       max_non_looping_transitions(max_non_looping_transitions),
       split_selector(task, pick),
-      abstraction(utils::make_unique_ptr<Abstraction>(task, log)),
-      abstract_search(task_properties::get_operator_costs(task_proxy)),
+      abstraction(abstraction),
+      abstract_search(abstract_search),
       timer(max_time),
       log(log) {
     assert(max_states >= 1);
@@ -112,11 +133,6 @@ CEGAR::CEGAR(
 }
 
 CEGAR::~CEGAR() {
-}
-
-unique_ptr<Abstraction> CEGAR::extract_abstraction() {
-    assert(abstraction);
-    return move(abstraction);
 }
 
 void CEGAR::separate_facts_unreachable_before_goal() {
@@ -185,7 +201,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
 
     while (may_keep_refining()) {
         find_trace_timer.resume();
-        unique_ptr<Solution> solution = abstract_search.find_solution(
+        unique_ptr<Solution> solution = abstract_search->find_solution(
             abstraction->get_transition_system().get_outgoing_transitions(),
             abstraction->get_initial_state().get_id(),
             abstraction->get_goals());
@@ -214,7 +230,7 @@ void CEGAR::refinement_loop(utils::RandomNumberGenerator &rng) {
         const Split &split = split_selector.pick_split(abstract_state, splits, rng);
         auto new_state_ids = abstraction->refine(abstract_state, split.var_id, split.values);
         // Since h-values only increase we can assign the h-value to the children.
-        abstract_search.copy_h_value_to_children(
+        abstract_search->copy_h_value_to_children(
             state_id, new_state_ids.first, new_state_ids.second);
         refine_timer.stop();
 
@@ -290,7 +306,7 @@ void CEGAR::print_statistics() {
     if (log.is_at_least_normal()) {
         abstraction->print_statistics();
         int init_id = abstraction->get_initial_state().get_id();
-        log << "Initial h value: " << abstract_search.get_h_value(init_id) << endl;
+        log << "Initial h value: " << abstract_search->get_h_value(init_id) << endl;
         log << endl;
     }
 }

@@ -2,6 +2,8 @@
 
 #include "cartesian_heuristic_function.h"
 #include "cost_saturation.h"
+#include "dihgar_strategy.h"
+#include "dihgar_task.h"
 #include "types.h"
 #include "utils.h"
 
@@ -25,10 +27,22 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     }
     vector<shared_ptr<SubtaskGenerator>> subtask_generators =
         opts.get_list<shared_ptr<SubtaskGenerator>>("subtasks");
+    
+    // Get the dihgar task from the strategies.
+    vector<shared_ptr<DihgarStrategy>> dihgar_strategies =
+        opts.get_list<shared_ptr<DihgarStrategy>>("dihgar");
+    vector<shared_ptr<DihgarTask>> dihgar_tasks;
+    for (shared_ptr<DihgarStrategy> strategy : dihgar_strategies) {
+        for (shared_ptr<DihgarTask> task : strategy->get_dihgar_tasks(log)) {
+            dihgar_tasks.push_back(task);
+        }
+    }
+
     shared_ptr<utils::RandomNumberGenerator> rng =
         utils::parse_rng_from_options(opts);
     CostSaturation cost_saturation(
         subtask_generators,
+        dihgar_tasks,
         opts.get<int>("max_states"),
         opts.get<int>("max_transitions"),
         opts.get<double>("max_time"),
@@ -107,6 +121,10 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "subtasks",
         "subtask generators",
         "[landmarks(),goals()]");
+    parser.add_list_option<shared_ptr<DihgarStrategy>>(
+        "dihgar",
+        "DIHGAR strategy",
+        "[only_cegar]");
     parser.add_option<int>(
         "max_states",
         "maximum sum of abstract states over all abstractions",

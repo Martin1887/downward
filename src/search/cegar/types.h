@@ -10,7 +10,7 @@ namespace cegar {
 class AbstractState;
 struct Transition;
 
-using AbstractStates = std::vector<std::unique_ptr<AbstractState>>;
+using AbstractStates = std::vector<std::shared_ptr<AbstractState>>;
 using Goals = std::unordered_set<int>;
 using NodeID = int;
 using Loops = std::vector<int>;

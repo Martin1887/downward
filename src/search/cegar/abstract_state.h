@@ -36,6 +36,8 @@ public:
 
     // Return the size of var's abstract domain for this state.
     int count(int var) const;
+    
+    std::vector<int> values_for_var(int var) const;
 
     bool contains(int var, int value) const;
 
@@ -48,6 +50,8 @@ public:
     */
     std::pair<CartesianSet, CartesianSet> split_domain(
         int var, const std::vector<int> &wanted) const;
+    
+    void set_value(int var, int value);
 
     bool includes(const AbstractState &other) const;
     bool includes(const State &concrete_state) const;
