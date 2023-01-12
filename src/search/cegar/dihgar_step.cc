@@ -70,7 +70,10 @@ void RefinedByFactsDihgarStep::refine_by_facts(
         // the fact to refine.
         AbstractStates all_states = dihgar->abstraction->get_all_states();
         for (auto &st : all_states) {
-            if (st->contains(to_refine.var, to_refine.value)) {
+            // Refine only if the value is in the state and more values exist
+            // for the same variable.
+            if (st->count(to_refine.var) > 1 &&
+                st->contains(to_refine.var, to_refine.value)) {
                 auto new_state_ids = dihgar->abstraction->refine(
                     *st, to_refine.var, vector<int>(to_refine.value));
                 // Since h-values only increase we can assign the h-value
