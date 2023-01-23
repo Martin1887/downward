@@ -26,6 +26,8 @@ public:
     const vector<shared_ptr<DihgarStep>> get_steps() const;
 
     void run(shared_ptr<DIHGAR> dihgar) const;
+    
+    bool contains_potentials_step() const;
 };
 }
 

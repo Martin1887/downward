@@ -49,6 +49,32 @@ public:
     DihgarSharedTasks get_dihgar_tasks(
         utils::LogProxy &log) const override;
 };
+
+/*
+  Create an intermediate abstraction refining by the smallest potentials.
+*/
+class SmallestPotentialsStrategy : public DihgarStrategy {
+protected:
+    const int fact_potentials_to_refine_number;
+public:
+    explicit SmallestPotentialsStrategy(const options::Options &opts);
+
+    DihgarSharedTasks get_dihgar_tasks(
+        utils::LogProxy &log) const override;
+};
+
+/*
+  Execute all strategies.
+*/
+class AllStrategy : public DihgarStrategy {
+protected:
+    const int fact_potentials_to_refine_number;
+public:
+    explicit AllStrategy(const options::Options &opts);
+
+    DihgarSharedTasks get_dihgar_tasks(
+        utils::LogProxy &log) const override;
+};
 }
 
 #endif

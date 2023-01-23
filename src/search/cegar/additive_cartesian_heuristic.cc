@@ -7,6 +7,7 @@
 #include "types.h"
 #include "utils.h"
 
+#include "../lp/lp_solver.h"
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -51,7 +52,9 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
         *rng,
         log);
     return cost_saturation.generate_heuristic_functions(
-        opts.get<shared_ptr<AbstractTask>>("transform"));
+        opts.get<shared_ptr<AbstractTask>>("transform"),
+        opts.get<lp::LPSolverType>("lpsolver")
+    );
 }
 
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(
@@ -157,6 +160,8 @@ static shared_ptr<Heuristic> _parse(OptionParser &parser) {
         "true");
     Heuristic::add_options_to_parser(parser);
     utils::add_rng_options(parser);
+    // LP solver is needed for DIHGAR potentials.
+    lp::add_lp_solver_option_to_parser(parser);
 
     Options opts = parser.parse();
 

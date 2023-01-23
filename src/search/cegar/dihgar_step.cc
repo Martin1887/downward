@@ -6,9 +6,12 @@
 #include "dihgar.h"
 #include "types.h"
 #include "utils_landmarks.h"
+
 #include "../landmarks/landmark.h"
 #include "../landmarks/landmark_factory_h_m.h"
 #include "../landmarks/landmark_graph.h"
+#include "../potentials/potential_function.h"
+#include "../potentials/potential_optimizer.h"
 
 #include <memory>
 #include <vector>
@@ -87,13 +90,56 @@ void RefinedByFactsDihgarStep::refine_by_facts(
     }
 }
 
-/*
-  Return the fact landmarks as the facts to be refined.
-*/
 const vector<FactPair> FactLandmarksDihgarStep::get_refined_facts(
     shared_ptr<DIHGAR> dihgar) const {
     const shared_ptr<LandmarkGraph> lm_graph = get_landmark_graph(dihgar->task);
     vector<FactPair> landmarks = get_fact_landmarks(*lm_graph);
     return landmarks;
+}
+
+AllStatesSmallestPotentialsDihgarStep::AllStatesSmallestPotentialsDihgarStep(
+    int fact_potentials_to_refine_number)
+    : fact_potentials_to_refine_number(fact_potentials_to_refine_number) {
+};
+
+const vector<FactPair> AllStatesSmallestPotentialsDihgarStep::get_refined_facts(
+    shared_ptr<DIHGAR> dihgar) const {
+    // 'Smallest' is defined as the `fact_potentials_to_refine_number`
+    // lowest values
+    
+    if (dihgar->fact_potentials != nullptr) {
+        // Each element of the tuple is `(var, value, potential)`.
+        vector<tuple<int, int, double>> potentials;
+        for (long unsigned int i = 0; i < dihgar->fact_potentials->size(); i++) {
+            for (long unsigned int j = 0;
+                j < dihgar->fact_potentials->at(i).size(); j++) {
+                potentials.push_back(
+                    tuple<int, int, double>(
+                        i, j, dihgar->fact_potentials->at(i)[j]));
+            }
+        }
+
+        // Sort from smallest to largest.
+        std::sort(potentials.begin(), potentials.end(),
+            [](const tuple<int, int, double> &a,
+                const tuple<int, int, double> &b) {
+                return get<2>(a) < get<2>(b);
+            }
+        );
+
+        // Get the elements with the lowest value.
+        vector<FactPair> to_refine;
+        for (int i = 0;
+            i < fact_potentials_to_refine_number && i < int(potentials.size());
+            i++) {
+            to_refine.emplace_back(get<0>(potentials[i]), get<1>(potentials[i]));
+        }
+
+        return to_refine;
+    } else {
+        dihgar->log <<
+            "No fact potentials computed. Remember to override the `has_potentials` function.";
+        abort();
+    }
 }
 }

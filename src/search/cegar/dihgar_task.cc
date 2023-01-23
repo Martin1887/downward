@@ -26,4 +26,14 @@ void DihgarTask::run(shared_ptr<DIHGAR> dihgar) const {
         step->run(dihgar);
     }
 }
+
+bool DihgarTask::contains_potentials_step() const {
+    for (auto step : steps) {
+        if (step->contains_potentials()) {
+            return true;
+        }
+    }
+    
+    return false;
+}
 }

@@ -1,8 +1,10 @@
 #ifndef CEGAR_DIHGAR_H
 #define CEGAR_DIHGAR_H
 
-#include "../abstract_task.h"
 #include "cegar.h"
+
+#include "../abstract_task.h"
+#include "../lp/lp_solver.h"
 
 using namespace std;
 
@@ -32,6 +34,8 @@ public:
     utils::RandomNumberGenerator &rng;
 
     utils::LogProxy &log;
+    
+    std::shared_ptr<std::vector<std::vector<double>>> fact_potentials;
 
     DIHGAR(
         const std::shared_ptr<AbstractTask> &task,
@@ -40,7 +44,8 @@ public:
         double max_time,
         PickSplit pick,
         utils::RandomNumberGenerator &rng,
-        utils::LogProxy &log);
+        utils::LogProxy &log,
+        std::shared_ptr<std::vector<std::vector<double>>> fact_potentials);
     ~DIHGAR() = default;
 
     DIHGAR(DIHGAR &) = delete;

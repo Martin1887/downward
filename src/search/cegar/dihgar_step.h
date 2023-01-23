@@ -17,6 +17,10 @@ public:
     virtual void run(shared_ptr<DIHGAR> dihgar) const {
         utils::unused_variable(dihgar);
     }
+    
+    virtual bool contains_potentials() const {
+        return false;
+    }
 
     virtual ~DihgarStep() = default;
 };
@@ -29,6 +33,9 @@ public:
     CegarDihgarStep() = default;
     CegarDihgarStep(CegarDihgarStep const &) = default;
     void run(shared_ptr<DIHGAR> dihgar) const override;
+    bool contains_potentials() const override {
+        return false;
+    };
 };
 
 /*
@@ -67,6 +74,10 @@ public:
     void run(shared_ptr<DIHGAR> dihgar) const override;
 
     virtual const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const = 0;
+
+    bool contains_potentials() const override {
+        return false;
+    };
 };
 
 /*
@@ -77,6 +88,27 @@ public:
     FactLandmarksDihgarStep() = default;
     FactLandmarksDihgarStep(FactLandmarksDihgarStep const &) = default;
     const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const override;
+
+    bool contains_potentials() const override {
+        return false;
+    };
+};
+
+/*
+  Refine the facts with the smallest potential (the most important ones to reach
+  goals) optimizing for all states.
+*/
+class AllStatesSmallestPotentialsDihgarStep : public RefinedByFactsDihgarStep {
+protected:
+    const int fact_potentials_to_refine_number;
+public:
+    AllStatesSmallestPotentialsDihgarStep(int fact_potentials_to_refine_number);
+    AllStatesSmallestPotentialsDihgarStep(AllStatesSmallestPotentialsDihgarStep const &) = default;
+    const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const override;
+    
+    bool contains_potentials() const override {
+        return true;
+    };
 };
 }
 

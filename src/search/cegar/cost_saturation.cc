@@ -12,6 +12,8 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../lp/lp_solver.h"
+#include "../potentials/potential_optimizer.h"
 #include "../task_utils/task_properties.h"
 #include "../tasks/modified_operator_costs_task.h"
 #include "../utils/countdown_timer.h"
@@ -109,7 +111,8 @@ CostSaturation::CostSaturation(
 }
 
 vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
-    const shared_ptr<AbstractTask> &task) {
+    const shared_ptr<AbstractTask> &task,
+    lp::LPSolverType lp_solver) {
     // For simplicity this is a member object. Make sure it is in a valid state.
     assert(heuristic_functions.empty());
 
@@ -132,10 +135,34 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
                    !utils::extra_memory_padding_is_reserved() ||
                    state_is_dead_end(initial_state);
         };
+    
+    // Create the potential heuristic and saturate its costs if any of the
+    // tasks contains a potentials refinement step.
+    // The potential heuristic is computed over the full task.
+    bool has_potentials_step = false;
+    for (auto task : dihgar_tasks) {
+        if (task->contains_potentials_step()) {
+            has_potentials_step = true;
+            break;
+        }
+    }
+
+    // The potential function cannot compute saturated costs, so it cannot
+    // be added to the cost saturation functions.
 
     utils::reserve_extra_memory_padding(memory_padding_in_mb);
     for (const shared_ptr<SubtaskGenerator> &subtask_generator : subtask_generators) {
         SharedTasks subtasks = subtask_generator->get_subtasks(task, log);
+        if (has_potentials_step) {
+            for (auto subtask : subtasks) {
+                potentials::PotentialOptimizer optimizer(
+                    subtask, lp_solver, 1e8);
+                optimizer.optimize_for_all_states();
+                fact_potentials[subtask] =
+                    make_shared<vector<vector<double>>>(
+                        optimizer.get_fact_potentials());
+            }
+        }
         build_abstractions(subtasks, dihgar_tasks, timer, should_abort);
         if (should_abort())
             break;
@@ -200,6 +227,11 @@ void CostSaturation::build_abstractions(
     int rem_subtasks = subtasks.size();
     int num_dihgar_tasks = dihgar_tasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
+        shared_ptr<vector<vector<double>>> subtask_pot = nullptr;
+        if (fact_potentials.find(subtask) != fact_potentials.end()) {
+            subtask_pot = fact_potentials[subtask];
+        }
+
         int rem_dihgar_tasks = num_dihgar_tasks;
 
         assert(num_states < max_states);
@@ -220,7 +252,8 @@ void CostSaturation::build_abstractions(
                 timer.get_remaining_time() / rem_tasks,
                 pick_split,
                 rng,
-                log);
+                log,
+                subtask_pot);
             dihgar_task->run(dihgar);
 
             shared_ptr<Abstraction> abstraction = dihgar->abstraction;

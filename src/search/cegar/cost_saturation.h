@@ -6,6 +6,8 @@
 #include "refinement_hierarchy.h"
 #include "split_selector.h"
 
+#include "../lp/lp_solver.h"
+
 #include <memory>
 #include <vector>
 
@@ -37,6 +39,9 @@ class CostSaturation {
     const PickSplit pick_split;
     utils::RandomNumberGenerator &rng;
     utils::LogProxy &log;
+    
+    std::unordered_map<std::shared_ptr<AbstractTask>,
+        std::shared_ptr<std::vector<std::vector<double>>>> fact_potentials;
 
     std::vector<CartesianHeuristicFunction> heuristic_functions;
     std::vector<int> remaining_costs;
@@ -69,7 +74,8 @@ public:
         utils::LogProxy &log);
 
     std::vector<CartesianHeuristicFunction> generate_heuristic_functions(
-        const std::shared_ptr<AbstractTask> &task);
+        const std::shared_ptr<AbstractTask> &task,
+        lp::LPSolverType lp_solver);
 };
 }
 

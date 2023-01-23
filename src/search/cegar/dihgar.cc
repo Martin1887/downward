@@ -7,6 +7,7 @@
 #include "transition_system.h"
 #include "utils.h"
 
+#include "../lp/lp_solver.h"
 #include "../task_utils/task_properties.h"
 #include "../utils/language.h"
 #include "../utils/logging.h"
@@ -28,7 +29,8 @@ DIHGAR::DIHGAR(
     double max_time,
     PickSplit pick,
     utils::RandomNumberGenerator &rng,
-    utils::LogProxy &log)
+    utils::LogProxy &log,
+    shared_ptr<vector<vector<double>>> fact_potentials)
     : task(task),
       task_proxy(*task),
       domain_sizes(get_domain_sizes(task_proxy)),
@@ -40,7 +42,8 @@ DIHGAR::DIHGAR(
       abstract_search(make_shared<AbstractSearch>(task_properties::get_operator_costs(task_proxy))),
       timer(max_time),
       rng(rng),
-      log(log) {
+      log(log),
+      fact_potentials(fact_potentials) {
     assert(max_states >= 1);
     if (log.is_at_least_normal()) {
         log << "Start building DIHGAR abstraction." << endl;
