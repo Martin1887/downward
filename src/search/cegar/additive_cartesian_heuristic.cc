@@ -54,7 +54,7 @@ static vector<CartesianHeuristicFunction> generate_heuristic_functions(
     return cost_saturation.generate_heuristic_functions(
         opts.get<shared_ptr<AbstractTask>>("transform"),
         opts.get<lp::LPSolverType>("lpsolver")
-    );
+        );
 }
 
 AdditiveCartesianHeuristic::AdditiveCartesianHeuristic(

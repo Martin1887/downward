@@ -33,7 +33,7 @@ bool DihgarTask::contains_potentials_step() const {
             return true;
         }
     }
-    
+
     return false;
 }
 }

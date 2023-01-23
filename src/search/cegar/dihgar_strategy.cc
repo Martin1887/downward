@@ -62,8 +62,8 @@ DihgarSharedTasks SmallestPotentialsStrategy::get_dihgar_tasks(
     DihgarSharedTasks dihgar_tasks;
     vector<shared_ptr<DihgarStep>> steps;
     steps.push_back(make_shared<AllStatesSmallestPotentialsDihgarStep>(
-        fact_potentials_to_refine_number
-    ));
+                        fact_potentials_to_refine_number
+                        ));
     steps.push_back(make_shared<CegarDihgarStep>());
     shared_ptr<DihgarTask> task = make_shared<DihgarTask>(steps);
     dihgar_tasks.push_back(task);
@@ -84,8 +84,8 @@ DihgarSharedTasks AllStrategy::get_dihgar_tasks(
     vector<shared_ptr<DihgarStep>> steps;
     steps.push_back(make_shared<FactLandmarksDihgarStep>());
     steps.push_back(make_shared<AllStatesSmallestPotentialsDihgarStep>(
-        fact_potentials_to_refine_number
-    ));
+                        fact_potentials_to_refine_number
+                        ));
     steps.push_back(make_shared<CegarDihgarStep>());
     shared_ptr<DihgarTask> task = make_shared<DihgarTask>(steps);
     dihgar_tasks.push_back(task);

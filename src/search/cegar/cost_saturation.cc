@@ -135,7 +135,7 @@ vector<CartesianHeuristicFunction> CostSaturation::generate_heuristic_functions(
                    !utils::extra_memory_padding_is_reserved() ||
                    state_is_dead_end(initial_state);
         };
-    
+
     // Create the potential heuristic and saturate its costs if any of the
     // tasks contains a potentials refinement step.
     // The potential heuristic is computed over the full task.

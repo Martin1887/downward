@@ -34,7 +34,7 @@ public:
     utils::RandomNumberGenerator &rng;
 
     utils::LogProxy &log;
-    
+
     std::shared_ptr<std::vector<std::vector<double>>> fact_potentials;
 
     DIHGAR(

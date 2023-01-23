@@ -17,7 +17,7 @@ public:
     virtual void run(shared_ptr<DIHGAR> dihgar) const {
         utils::unused_variable(dihgar);
     }
-    
+
     virtual bool contains_potentials() const {
         return false;
     }
@@ -35,7 +35,7 @@ public:
     void run(shared_ptr<DIHGAR> dihgar) const override;
     bool contains_potentials() const override {
         return false;
-    };
+    }
 };
 
 /*
@@ -77,7 +77,7 @@ public:
 
     bool contains_potentials() const override {
         return false;
-    };
+    }
 };
 
 /*
@@ -91,7 +91,7 @@ public:
 
     bool contains_potentials() const override {
         return false;
-    };
+    }
 };
 
 /*
@@ -105,10 +105,10 @@ public:
     AllStatesSmallestPotentialsDihgarStep(int fact_potentials_to_refine_number);
     AllStatesSmallestPotentialsDihgarStep(AllStatesSmallestPotentialsDihgarStep const &) = default;
     const vector<FactPair> get_refined_facts(shared_ptr<DIHGAR> dihgar) const override;
-    
+
     bool contains_potentials() const override {
         return true;
-    };
+    }
 };
 }
 
