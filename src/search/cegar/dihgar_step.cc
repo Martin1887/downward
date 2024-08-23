@@ -90,6 +90,7 @@ void RefinedByFactsDihgarStep::refine_by_facts(
     }
 }
 
+// TODO: create different tasks with a maximum number of facts
 const vector<FactPair> FactLandmarksDihgarStep::get_refined_facts(
     shared_ptr<DIHGAR> dihgar) const {
     const shared_ptr<LandmarkGraph> lm_graph = get_landmark_graph(dihgar->task);

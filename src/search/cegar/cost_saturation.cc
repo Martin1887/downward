@@ -224,9 +224,18 @@ void CostSaturation::build_abstractions(
     const vector<shared_ptr<DihgarTask>> &dihgar_tasks,
     const utils::CountdownTimer &timer,
     function<bool()> should_abort) {
+    
     int rem_subtasks = subtasks.size();
     int num_dihgar_tasks = dihgar_tasks.size();
     for (shared_ptr<AbstractTask> subtask : subtasks) {
+
+        if (log.is_at_least_normal()) {
+            log << "Operators:\n";
+            for (long unsigned int i = 0; i < remaining_costs.size(); i++) {
+                log << subtask->get_operator_name(i, false) << "\n";
+            }
+        }
+    
         shared_ptr<vector<vector<double>>> subtask_pot = nullptr;
         if (fact_potentials.find(subtask) != fact_potentials.end()) {
             subtask_pot = fact_potentials[subtask];
@@ -281,7 +290,15 @@ void CostSaturation::build_abstractions(
                 abstraction->extract_refinement_hierarchy(),
                 move(goal_distances));
 
+            if (log.is_at_least_normal()) {
+                log << "Costs before reducing saturated costs\n"
+                    << remaining_costs << "\n";
+            }
             reduce_remaining_costs(saturated_costs);
+            if (log.is_at_least_normal()) {
+                log << "Costs after reducing saturated costs\n"
+                    << remaining_costs << "\n";
+            }
 
             if (should_abort())
                 break;
