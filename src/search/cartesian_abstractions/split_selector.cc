@@ -4,7 +4,8 @@
 #include "utils.h"
 
 #include "../heuristics/additive_heuristic.h"
-
+#include "../lp/lp_solver.h"
+#include "../potentials/potential_optimizer.h"
 #include "../utils/logging.h"
 #include "../utils/rng.h"
 
@@ -21,6 +22,9 @@ SplitSelector::SplitSelector(
     : task(task),
       task_proxy(*task),
       pick(pick) {
+    potentials::PotentialOptimizer optimizer(
+        task, lp::LPSolverType::CPLEX, 1e8);
+    optimizer.optimize_for_all_states();
     if (pick == PickSplit::MIN_HADD || pick == PickSplit::MAX_HADD) {
         additive_heuristic =
             utils::make_unique_ptr<additive_heuristic::AdditiveHeuristic>(
